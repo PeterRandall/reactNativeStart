@@ -1,6 +1,6 @@
 
-import CardExample from "./CardExample_wPanResponder";
+import Calculator from "./StudentFile";
   
-export default CardExample;
+export default Calculator;
 
 

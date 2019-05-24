@@ -4,7 +4,9 @@ import RectanglePanDemo from "./RectanglePanDemo";
 import PanDemo from "./PanDemo";
 import NavApp from "./CardExample_wmScreensExample";
 import StopWatch from "./EshaStopWatch";
+import ImageExample from "./BlankApp";
+import PanRespSquares from "./PanRespSquares";
   
-export default NavApp;
+export default PanRespSquares;
 
 
