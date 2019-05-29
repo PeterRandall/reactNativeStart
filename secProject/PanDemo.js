@@ -4,9 +4,10 @@
 "use strict";
 
 import React, { Component } from "react";
-import { StyleSheet, PanResponder, View, Text } from "react-native";
+import { StyleSheet, PanResponder, View, Text, Dimensions } from "react-native";
 
-const CIRCLE_SIZE = 40;
+const INNER_CIRCLE_SIZE = 80;
+const CIRCLE_SIZE = 80;
 const CIRCLE_COLOR = "blue";
 const CIRCLE_HIGHLIGHT_COLOR = "green";
 
@@ -17,6 +18,8 @@ class PanResponderExample extends Component {
   _previousTop = 0;
   _circleStyles = {};
   circle = null;
+  _circle2Styles = {};
+  circle2 = null;
 
   constructor(props) {
     super(props);
@@ -29,7 +32,13 @@ class PanResponderExample extends Component {
       dx: 0,
       dy: 0,
       vx: 0,
-      vy: 0
+      vy: 0, 
+	  currX: 0,
+	  currY: 0,
+	  prevX: 0,
+	  prevY: 0,
+	  screenWidth: 0,
+	  screenHeight: 0,
     };
   }
 
@@ -42,9 +51,21 @@ class PanResponderExample extends Component {
       onPanResponderRelease: this._handlePanResponderEnd,
       onPanResponderTerminate: this._handlePanResponderEnd
     });
-    this._previousLeft = 20;
-    this._previousTop = 84;
+    this._previousLeft = this.state.currX;
+    this._previousTop = this.state.currY;
+	
+	var {height, width} = Dimensions.get('window');
+	let tHeight = Math.round(height);   //number of rows
+	let tWidth = Math.round(width);  //number of columns
+	this.setState({
+      screenWidth: tWidth,
+      screenHeight: tHeight,
+    });
+	
     this._circleStyles = {
+      style: { left: this._previousLeft, top: this._previousTop }
+    };
+	this._circle2Styles = {
       style: { left: this._previousLeft, top: this._previousTop }
     };
   }
@@ -56,20 +77,39 @@ class PanResponderExample extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <View
+        
+        <Text>
+          {this.state.numberActiveTouches} touches,
+		  x0: {Math.round(this.state.x0)},
+		  y0: {Math.round(this.state.y0)},
+          dx: {Math.round(this.state.dx)},
+          dy: {Math.round(this.state.dy)},
+          vx: {this.state.vx},
+          vy: {this.state.vy}
+        </Text>
+		<Text>
+          width: {this.state.screenWidth},height: {this.state.screenHeight}
+        </Text>
+		<Text>
+           x: {Math.round(this.state.x0 + this.state.dx)},  y: {Math.round(this.state.y0 + this.state.dy)}
+        </Text>
+		<Text>
+          cx: {Math.round(this._previousLeft + this.state.dx)}, cy: {Math.round(this._previousTop + this.state.dy)}
+        </Text>
+		
+		<View
           ref={circle => {
             this.circle = circle;
           }}
           style={styles.circle}
           {...this._panResponder.panHandlers}
         />
-        <Text>
-          {this.state.numberActiveTouches} touches,
-          dx: {this.state.dx},
-          dy: {this.state.dy},
-          vx: {this.state.vx},
-          vy: {this.state.vy}
-        </Text>
+		<View
+		  ref={circle2 => {
+            this.circle2 = circle2;
+          }}
+          style={styles.circle2}
+        />
       </View>
     );
   }
@@ -91,6 +131,7 @@ class PanResponderExample extends Component {
   // We're controlling the circle's position directly with setNativeProps.
   _updatePosition = () => {
     this.circle && this.circle.setNativeProps(this._circleStyles);
+	this.circle2 && this.circle2.setNativeProps(this._circle2Styles);
   };
 
   _handleStartShouldSetPanResponder = (event, gestureState) => {
@@ -124,6 +165,10 @@ class PanResponderExample extends Component {
     // Calculate current position using deltas
     this._circleStyles.style.left = this._previousLeft + gestureState.dx;
     this._circleStyles.style.top = this._previousTop + gestureState.dy;
+	
+	this._circle2Styles.style.left = this._previousLeft + gestureState.dx;
+    this._circle2Styles.style.top = this._previousTop + gestureState.dy;
+	
     this._updatePosition();
   };
 
@@ -140,6 +185,15 @@ const styles = StyleSheet.create({
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
     backgroundColor: CIRCLE_COLOR,
+    position: "absolute",
+    left: 0,
+    top: 0
+  },
+  circle2: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'red',
     position: "absolute",
     left: 0,
     top: 0

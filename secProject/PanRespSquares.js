@@ -14,9 +14,11 @@ class MyRow extends Component {
     constructor(props) {
        super(props);
     }
-   setStyleColor(index) {
-      let redOn = this.props.getFunc(0, index);
-      if (redOn)
+   setStyleColor(row, index) {
+      let redOn = this.props.getFunc(row, index);
+      if (redOn == 2)
+        return { backgroundColor: 'red' };
+	  else if (redOn == 1)
         return { backgroundColor: 'white' };
       else 
         return { backgroundColor: 'black' };
@@ -24,19 +26,12 @@ class MyRow extends Component {
     
   render() {
     return (
-      <View style={styles.columnView}>
-          <View style={[styles.voidView, this.setStyleColor(0)]}> 
-		     <Text> </Text> 
-		  </View>
-          <View style={[styles.voidView, this.setStyleColor(1)]}> 
-		     <Text> </Text> 
-		  </View>
-		  <View style={[styles.voidView, this.setStyleColor(2)]}> 
-		     <Text> </Text> 
-		  </View>
-		  <View style={[styles.voidView, this.setStyleColor(3)]}> 
-		     <Text> </Text> 
-		  </View>
+      <View style={styles.rowContainer}>
+          <View style={[styles.voidView, this.setStyleColor(this.props.row, 0)]}/>  
+          <View style={[styles.voidView, this.setStyleColor(this.props.row, 1)]}/> 
+		  <View style={[styles.voidView, this.setStyleColor(this.props.row, 2)]}/>  
+		  <View style={[styles.voidView, this.setStyleColor(this.props.row, 3)]}/> 
+		  <View style={[styles.voidView, this.setStyleColor(this.props.row, 4)]}/>
       </View>
     );
   }
@@ -67,16 +62,23 @@ class PanRespSquares extends Component {
 	  numCols: 2,
 	  tileWidth: 0,
 	  tileHeight: 0,
-	  squares: [[0,0,1,0],
-                  [0,0,1,0],
-                  [0,1,1,0], 
-                  [1,1,0,0],
-                  [1,0,0,0]],
+	  squares: [[0,0,1,1,0],
+                [0,0,0,1,1],
+                [0,1,1,1,1], 
+				[0,0,0,1,0],
+				[0,1,1,1,1],
+                [1,1,0,0,1],
+                [1,0,0,0,0]],
     };
   }
   
-  getValue = (x, y) => {
-        return this.state.squares[x][y];
+  getValue = (row, col) => {
+	    let currLeft = Math.round((this._previousLeft + this.state.dx) / this.state.tileWidth);
+		let currTop = Math.round((this._previousTop + this.state.dy) / this.state.tileHeight);
+		if (this.state.squares[row][col] == 1 && currLeft == col && currTop == row)
+			return 2;
+		
+        return this.state.squares[row][col];
         
     }
 
@@ -89,19 +91,24 @@ class PanRespSquares extends Component {
       onPanResponderRelease: this._handlePanResponderEnd,
       onPanResponderTerminate: this._handlePanResponderEnd
     });
-    this._previousLeft = 20;
-    this._previousTop = 84;
-    this._circleStyles = {
-      style: { left: this._previousLeft, top: this._previousTop }
-    };
+    this._previousLeft = 0;
+    this._previousTop = 0;
 	
 	var {height, width} = Dimensions.get('window');
-	let tHeight = Math.round(height / this.state.numRows);
-	let tWidth = Math.round(width / this.state.numCols);
+	let tHeight = Math.round(height / this.state.squares.length);   //number of rows
+	let tWidth = Math.round(width / this.state.squares[0].length);  //number of columns
+	let tRadius = Math.round(tWidth/2);
+	
+	this._circleStyles = {
+      style: { left: this._previousLeft, top: this._previousTop, 
+               width: tWidth, height: tHeight, borderRadius: tRadius  }
+    };
+	
 	this.setState({
       tileWidth: tWidth,
-	  tileHeight: tHeight
+      tileHeight: tHeight,
     });
+	
   }
 
   componentDidMount() {
@@ -112,19 +119,7 @@ class PanRespSquares extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <View style={styles.topPart}>
-           <Text>
-             {this.state.numberActiveTouches} touches,
-             dx: {this.state.dx},
-             dy: {this.state.dy},
-             vx: {this.state.vx},
-             vy: {this.state.vy}
-           </Text>
-		   <Text>
-             width: {this.state.tileWidth} , height: {this.state.tileHeight}
-           </Text>
-		</View>
-		<View style={styles.bottom}>
+        
            <View style={styles.voidView}>
                <View style={styles.rows}>
                    <MyRow getFunc={this.getValue.bind(this)} row={0} />
@@ -141,10 +136,15 @@ class PanRespSquares extends Component {
                <View style={styles.rows}>
                    <MyRow getFunc={this.getValue.bind(this)} row={4} />
                </View>
+			   <View style={styles.rows}>
+                   <MyRow getFunc={this.getValue.bind(this)} row={5} />
+               </View>
+			   <View style={styles.rows}>
+                   <MyRow getFunc={this.getValue.bind(this)} row={6} />
+               </View>
                        
                         
            </View>
-        </View>
 		<View
           ref={circle => {
             this.circle = circle;
@@ -213,6 +213,10 @@ class PanRespSquares extends Component {
     this._unHighlight();
     this._previousLeft += gestureState.dx;
     this._previousTop += gestureState.dy;
+	
+	this._circleStyles.style.left = this._previousLeft;
+    this._circleStyles.style.top = this._previousTop;
+    this._updatePosition();
   };
 }
 
@@ -228,8 +232,14 @@ const styles = StyleSheet.create({
   },
   container: { 
      flex: 1, 
-	 paddingTop: 64 
+	 paddingTop: 0 
 	}, 
+  rowContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems:'stretch',
+    justifyContent: 'center',
+  },
   topPart: {
         flex: 1,
     },
@@ -245,7 +255,11 @@ const styles = StyleSheet.create({
         fontSize: 30,
     },
     voidView: {
-        flex: 1,
+        flex:1,
+        margin: 1,
+        alignItems:'stretch',
+        justifyContent: 'center',
+        backgroundColor: 'lightblue',
     },
     columnView: {
         flex: 1,
